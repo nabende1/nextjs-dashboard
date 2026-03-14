@@ -26,7 +26,7 @@ export default function NavLinks() {
       {links.map((link) => {
         const LinkIcon = link.icon;
         return (
-          <Link
+          <Link //linking to the dashboard page, invoices page and customers page
             key={link.name}
             href={link.href}
             className={clsx(
