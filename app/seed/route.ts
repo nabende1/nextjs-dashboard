@@ -2,7 +2,10 @@ import bcrypt from 'bcrypt';
 import postgres from 'postgres';
 import { invoices, customers, revenue, users } from '../lib/placeholder-data';
 
-const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
+const sql = postgres(process.env.POSTGRES_URL!, { 
+  ssl: 'require',
+  prepare: false // This is key - disables prepared statements
+});
 
 async function seedUsers() {
   await sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
@@ -103,15 +106,26 @@ async function seedRevenue() {
 
 export async function GET() {
   try {
-    const result = await sql.begin((sql) => [
-      seedUsers(),
-      seedCustomers(),
-      seedInvoices(),
-      seedRevenue(),
-    ]);
+    // Use a regular transaction, not the array version
+    await sql.begin(async (transactionSql) => {
+      // Temporarily replace the global sql with transaction sql
+      const originalSql = sql;
+      Object.assign(global, { sql: transactionSql });
+      
+      try {
+        await seedUsers();
+        await seedCustomers();
+        await seedInvoices();
+        await seedRevenue();
+      } finally {
+        // Restore original sql
+        Object.assign(global, { sql: originalSql });
+      }
+    });
 
     return Response.json({ message: 'Database seeded successfully' });
   } catch (error) {
+    console.error('Seeding error:', error);
     return Response.json({ error }, { status: 500 });
   }
 }
