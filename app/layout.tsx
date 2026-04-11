@@ -18,7 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${lusitana.className} antialiased`}>{children}</body>
+      <body className={`${lusitana.className} antialiased`} suppressHydrationWarning>{children}</body>
     </html>
   );
 }
